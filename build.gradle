@@ -1,0 +1,103 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'com.github.johnrengelman.shadow' version '7.1.0'
+    id 'kr.entree.spigradle' version '2.2.4'
+    id 'java'
+}
+
+if (project.hasProperty("local_script")) {
+    apply from: file(local_script + "/build.local.gradle")
+}
+
+sourceCompatibility = 17
+targetCompatibility = 17
+
+ext {
+    mcVersion = project.property("minecraft_version")
+}
+
+group project.property("maven_group")
+
+spigot {
+    name = project.property("plugin_name")
+    authors = [project.property("author")]
+    load = STARTUP
+    main = "com.sof.plugins.core.Main"
+    commands {
+        addrating {
+            description = 's'
+            permission = 'minecraft.commands.op'
+            permissionMessage = 'You do not have permission!'
+            usage = '/addrating [player] [amount] [reason]'
+        }
+        getrating {
+            description = 's'
+            permission = 'minecraft.commands.op'
+            permissionMessage = 'You do not have permission!'
+            usage = '/getrating [player] '
+        }
+    }
+}
+
+tasks.register("copyJar", Copy) {
+    from "build/libs/core-dev.jar"
+    into "server/plugins"
+}
+
+compileJava.options.encoding = 'UTF-8'
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ["-parameters"]
+    options.fork = true
+    options.forkOptions.executable = 'javac'
+}
+
+archivesBaseName = project.property("plugin_name")
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+    spigot()
+}
+
+dependencies {
+
+    //spigot
+    implementation spigot(mcVersion)
+    shadow (implementation 'org.mongodb:mongodb-driver-sync:4.8.1')
+    shadow (implementation 'org.mongodb:bson:4.8.1')
+}
+
+shadowJar {
+    configurations = [project.configurations.shadow]
+    archiveClassifier.set("dev")
+}
+
+tasks.build.dependsOn(shadowJar)
+tasks.prepareSpigotPlugins.dependsOn(shadowJar)
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "skipped", "failed"
+    }
+    ignoreFailures = false
+}
+
+processResources {
+    project.properties.put("plugin_version", this.version)
+    expand project.properties
+}
+
+defaultTasks 'build'
