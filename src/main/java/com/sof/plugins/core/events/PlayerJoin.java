@@ -20,11 +20,13 @@ public class PlayerJoin implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         User user = new User(event.getPlayer().getName(), manager);
+        //System.out.println(user.getReasons().isEmpty());
+        if(user.getReasons().isEmpty()) return;
         Log last = user.getReasons().get(user.getReasons().size()-1);
         event.getPlayer().sendMessage(
                 String.format(
                         "Здравствуйте, %s, ваш рейтинг: %d\nПоследнее изменение рейтинга: %d\nПричина: %s\nМодератор: %s",
-                        event.getPlayer().getName();
+                        event.getPlayer().getName(),
                         user.getRating(),
                         last.getAmount(),
                         last.getReason(),

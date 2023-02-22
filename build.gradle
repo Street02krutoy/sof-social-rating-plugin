@@ -37,8 +37,6 @@ spigot {
         }
         getrating {
             description = 's'
-            permission = 'minecraft.commands.op'
-            permissionMessage = 'You do not have permission!'
             usage = '/getrating [player] '
         }
     }

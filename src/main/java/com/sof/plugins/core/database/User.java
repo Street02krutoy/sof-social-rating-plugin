@@ -34,9 +34,8 @@ public class User {
         };
 
 
-        collection.insertOne(new Document("nickname", nickname).append("rating", 0).append("reasons", reasons));
+        collection.insertOne(new Document("nickname", nickname).append("rating", 500).append("reasons", reasons));
         user = collection.find(eq("nickname", nickname)).first();
-        System.out.println(user.toJson());
 
         this.nickname = user.getString("nickname");
         this.rating = user.getInteger("rating");
