@@ -1,5 +1,7 @@
 package com.sof.plugins.core;
 
+import net.md_5.bungee.api.chat.TextComponent;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -16,10 +18,6 @@ public class TableGenerator {
     private static final List<Character> char3 = Arrays.asList('l', '`', '³', '\'');
     private static final List<Character> char2 = Arrays.asList(',', '.', '!', 'i', '´', ':', ';', '|');
     private static final char char1 = '៲';
-    private static final Pattern regex = Pattern.compile(char1+"(?:§r)?(\\s*)"
-            + "(?:§r§8)?"+char1+"(?:§r)?(\\s*)"
-            + "(?:§r§8)?"+char1+"(?:§r)?(\\s*)"
-            + "(?:§r§8)?"+char1);
     private static String colors = "[&§][0-9a-fA-Fk-oK-OrR]";
     private final Alignment[] alignments;
     private final List<Row> table = new ArrayList<>();
@@ -33,8 +31,7 @@ public class TableGenerator {
         this.alignments = alignments;
     }
 
-    public List<String> generate(Receiver receiver, boolean ignoreColors,
-                                 boolean coloredDistances) {
+    public List<TextComponent> generate(Receiver receiver, boolean ignoreColors) {
         if (receiver == null) {
             throw new IllegalArgumentException("Receiver must not be null.");
         }
@@ -43,13 +40,13 @@ public class TableGenerator {
 
         for (Row r : table) {
             for (int i = 0; i < columns; i++) {
-                String text = r.texts.get(i);
+                TextComponent text = r.texts.get(i);
                 int length;
 
                 if (ignoreColors)
-                    length = getCustomLength(text.replaceAll(colors, ""),
+                    length = getCustomLength(text.getText().replaceAll(colors, ""),
                             receiver);
-                else length = getCustomLength(text, receiver);
+                else length = getCustomLength(text.getText(), receiver);
 
                 if (columWidths[i] == null) {
                     columWidths[i] = length;
@@ -61,48 +58,41 @@ public class TableGenerator {
             }
         }
 
-        List<String> lines = new ArrayList<String>();
+        List<TextComponent> lines = new ArrayList<TextComponent>();
 
         for (Row r : table) {
-            StringBuilder sb = new StringBuilder();
+            TextComponent sb = new TextComponent();
 
             if (r.empty) {
-                lines.add("");
+                lines.add(new TextComponent(""));
                 continue;
             }
 
             for (int i = 0; i < columns; i++) {
                 Alignment agn = alignments[i];
-                String text = r.texts.get(i);
+                TextComponent text = r.texts.get(i);
                 int length;
 
                 if (ignoreColors)
-                    length = getCustomLength(text.replaceAll(colors, ""),
+                    length = getCustomLength(text.getText().replaceAll(colors, ""),
                             receiver);
-                else length = getCustomLength(text,
+                else length = getCustomLength(text.getText(),
                         receiver);
 
                 int empty = columWidths[i] - length;
                 int spacesAmount = empty;
                 if (receiver == Receiver.CLIENT)
                     spacesAmount = (int) Math.floor(empty / 4d);
-                int char1Amount = 0;
-                if (receiver == Receiver.CLIENT)
-                    char1Amount = empty - 4 * spacesAmount;
 
                 String spaces = concatChars(' ', spacesAmount);
-                String char1s = concatChars(char1, char1Amount);
-
-                if (coloredDistances)
-                    char1s = "§r§8" + char1s + "§r";
 
                 if (agn == Alignment.LEFT) {
-                    sb.append(text);
+                    sb.addExtra(text);
                     if (i < columns - 1)
-                        sb.append(char1s).append(spaces);
+                        sb.addExtra(spaces);
                 }
                 if (agn == Alignment.RIGHT) {
-                    sb.append(spaces).append(char1s).append(text);
+                    sb.addExtra(spaces); sb.addExtra(text);
                 }
                 if (agn == Alignment.CENTER) {
                     int leftAmount = empty / 2;
@@ -115,42 +105,110 @@ public class TableGenerator {
                         spacesRightAmount = (int) Math.floor(spacesRightAmount / 4d);
                     }
 
-                    int char1LeftAmount = 0;
-                    int char1RightAmount = 0;
+                    String spacesLeft = concatChars(' ', spacesLeftAmount);
+                    String spacesRight = concatChars(' ', spacesRightAmount);
+
+                    sb.addExtra(spacesLeft);
+                    sb.addExtra(text);
+                    if (i < columns - 1)
+                        sb.addExtra(spacesRight);
+                }
+
+                if (i < columns - 1) sb.addExtra(delimiter);
+            }
+            lines.add(sb);
+        }
+        return lines;
+    }
+
+    public Paginator generateWithPaginate(Receiver receiver, boolean ignoreColors, int page) {
+        if (receiver == null) {
+            throw new IllegalArgumentException("Receiver must not be null.");
+        }
+
+        Integer[] columWidths = new Integer[columns];
+
+        for (Row r : table) {
+            for (int i = 0; i < columns; i++) {
+                TextComponent text = r.texts.get(i);
+                int length;
+
+                if (ignoreColors)
+                    length = getCustomLength(text.getText().replaceAll(colors, ""),
+                            receiver);
+                else length = getCustomLength(text.getText(), receiver);
+
+                if (columWidths[i] == null) {
+                    columWidths[i] = length;
+                }
+
+                else if (length > columWidths[i]) {
+                    columWidths[i] = length;
+                }
+            }
+        }
+
+        List<TextComponent> lines = new ArrayList<TextComponent>();
+
+        for (Row r : table) {
+            TextComponent sb = new TextComponent();
+
+            if (r.empty) {
+                lines.add(new TextComponent(""));
+                continue;
+            }
+
+            for (int i = 0; i < columns; i++) {
+                Alignment agn = alignments[i];
+                TextComponent text = r.texts.get(i);
+                int length;
+
+                if (ignoreColors)
+                    length = getCustomLength(text.getText().replaceAll(colors, ""),
+                            receiver);
+                else length = getCustomLength(text.getText(),
+                        receiver);
+
+                int empty = columWidths[i] - length;
+                int spacesAmount = empty;
+                if (receiver == Receiver.CLIENT)
+                    spacesAmount = (int) Math.floor(empty / 4d);
+
+                String spaces = concatChars(' ', spacesAmount);
+
+                if (agn == Alignment.LEFT) {
+                    sb.addExtra(text);
+                    if (i < columns - 1)
+                        sb.addExtra(spaces);
+                }
+                if (agn == Alignment.RIGHT) {
+                    sb.addExtra(spaces); sb.addExtra(text);
+                }
+                if (agn == Alignment.CENTER) {
+                    int leftAmount = empty / 2;
+                    int rightAmount = empty - leftAmount;
+
+                    int spacesLeftAmount = leftAmount;
+                    int spacesRightAmount = rightAmount;
                     if (receiver == Receiver.CLIENT) {
-                        char1LeftAmount = leftAmount - 4 * spacesLeftAmount;
-                        char1RightAmount = rightAmount - 4 * spacesRightAmount;
+                        spacesLeftAmount = (int) Math.floor(spacesLeftAmount / 4d);
+                        spacesRightAmount = (int) Math.floor(spacesRightAmount / 4d);
                     }
 
                     String spacesLeft = concatChars(' ', spacesLeftAmount);
                     String spacesRight = concatChars(' ', spacesRightAmount);
-                    String char1Left = concatChars(char1, char1LeftAmount);
-                    String char1Right = concatChars(char1, char1RightAmount);
 
-                    if (coloredDistances) {
-                        char1Left = "§r§8" + char1Left + "§r";
-                        char1Right = "§r§8" + char1Right + "§r";
-                    }
-
-                    sb.append(spacesLeft).append(char1Left).append(text);
+                    sb.addExtra(spacesLeft);
+                    sb.addExtra(text);
                     if (i < columns - 1)
-                        sb.append(char1Right).append(spacesRight);
+                        sb.addExtra(spacesRight);
                 }
 
-                if (i < columns - 1) sb.append("§r" + delimiter);
+                if (i < columns - 1) sb.addExtra(delimiter);
             }
-
-            String line = sb.toString();
-            if (receiver == Receiver.CLIENT) {
-                for (int i = 0; i < 2; i++) {
-                    Matcher matcher = regex.matcher(line);
-                    line = matcher.replaceAll("$1$2$3 ").replace("§r§8§r", "§r")
-                            .replaceAll("§r(\\s*)§r", "§r$1");
-                }
-            }
-            lines.add(line);
+            lines.add(sb);
         }
-        return lines;
+        return new Paginator (lines);
     }
 
     protected static int getCustomLength(String text, Receiver receiver) {
@@ -189,11 +247,11 @@ public class TableGenerator {
         return s;
     }
 
-    public void addRow(String... texts) {
+    public void addRow(TextComponent... texts) {
         if (texts == null) {
             throw new IllegalArgumentException("Texts must not be null.");
         }
-        if (texts != null && texts.length > columns) {
+        if (texts.length > columns) {
             throw new IllegalArgumentException("Too big for the table.");
         }
 
@@ -202,26 +260,69 @@ public class TableGenerator {
         table.add(r);
     }
 
+    public void addRow(String... texts) {
+        if (texts == null) {
+            throw new IllegalArgumentException("Texts must not be null.");
+        }
+        if (texts.length > columns) {
+            throw new IllegalArgumentException("Too big for the table.");
+        }
+
+        Row r = new Row(texts);
+
+        table.add(r);
+    }
+
+    private class Paginator {
+        private List<TextComponent> lines;
+        private int pageNumber;
+        private int totalPages;
+
+        protected Paginator (List<TextComponent> lines, int pageNumber) {
+            this.lines = lines.subList()
+
+        }
+    }
+
     private class Row {
 
-        public List<String> texts = new ArrayList<>();
+        public List<TextComponent> texts = new ArrayList<>();
         public boolean empty = true;
 
-        public Row(String... texts) {
+        public Row(TextComponent... texts) {
             if (texts == null) {
                 for (int i = 0; i < columns; i++)
-                    this.texts.add("");
+                    this.texts.add(new TextComponent(""));
                 return;
             }
 
-            for (String text : texts) {
-                if (text != null && !text.isEmpty()) empty = false;
+            for (TextComponent text : texts) {
+                if (text != null && !text.getText().isEmpty()) empty = false;
 
                 this.texts.add(text);
             }
 
             for (int i = 0; i < columns; i++) {
-                if (i >= texts.length) this.texts.add("");
+                if (i >= texts.length) this.texts.add(new TextComponent(""));
+            }
+        }
+
+        public Row(String... texts) {
+            if (texts == null) {
+                for (int i = 0; i < columns; i++)
+                    this.texts.add(new TextComponent(""));
+                return;
+            }
+
+            for (String stringText : texts) {
+                TextComponent text = new TextComponent(stringText);
+                if (text != null && !text.getText().isEmpty()) empty = false;
+
+                this.texts.add(text);
+            }
+
+            for (int i = 0; i < columns; i++) {
+                if (i >= texts.length) this.texts.add(new TextComponent(""));
             }
         }
     }

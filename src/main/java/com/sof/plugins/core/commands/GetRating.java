@@ -43,9 +43,9 @@ public class GetRating implements CommandExecutor {
         ChatPaginator.ChatPage chatPage = null;
         try {
             int page = Integer.parseInt(args[1]);
-            chatPage = ChatPaginator.paginate(String.join("\n", tg.generate(TableGenerator.Receiver.CLIENT, false, true)), page, ChatPaginator.UNBOUNDED_PAGE_WIDTH, ChatPaginator.CLOSED_CHAT_PAGE_HEIGHT);
+            chatPage = ChatPaginator.paginate(String.join("\n", tg.generate(TableGenerator.Receiver.CLIENT, false)), page, ChatPaginator.UNBOUNDED_PAGE_WIDTH, ChatPaginator.CLOSED_CHAT_PAGE_HEIGHT);
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException ignored) {
-            chatPage = ChatPaginator.paginate(String.join("\n", tg.generate(TableGenerator.Receiver.CLIENT, false, true)), 1, ChatPaginator.UNBOUNDED_PAGE_WIDTH, ChatPaginator.CLOSED_CHAT_PAGE_HEIGHT);
+            chatPage = ChatPaginator.paginate(String.join("\n", tg.generate(TableGenerator.Receiver.CLIENT, false)), 1, ChatPaginator.UNBOUNDED_PAGE_WIDTH, ChatPaginator.CLOSED_CHAT_PAGE_HEIGHT);
         }
 
         sender.sendMessage(chatPage.getLines());
