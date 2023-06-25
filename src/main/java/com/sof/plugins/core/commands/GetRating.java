@@ -2,7 +2,7 @@ package com.sof.plugins.core.commands;
 
 import com.sof.plugins.core.Log;
 import com.sof.plugins.core.TableGenerator;
-import com.sof.plugins.core.database.DatabaseManager;
+import com.sof.plugins.core.database.Database;
 import com.sof.plugins.core.database.User;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -12,12 +12,11 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.util.ChatPaginator;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.SQLException;
+
 public class GetRating implements CommandExecutor {
 
-    private final DatabaseManager manager;
-
-    public GetRating(DatabaseManager manager) {
-        this.manager = manager;
+    public GetRating() {
     }
 
     @Override
@@ -27,7 +26,13 @@ public class GetRating implements CommandExecutor {
             return false;
         }
 
-        User user = new User(args[0], manager);
+        User user = null;
+        try {
+            user = Database.getUser(args[0]);
+        } catch (SQLException e) {
+            System.out.println(e);
+            return false;
+        }
         sender.sendMessage("Текущий рейтинг игрока: " + user.getRating() + "\n");
         if(user.getReasons().isEmpty()) {
             sender.sendMessage("У игрока нет изменений рейтинга на данный момент");
@@ -35,10 +40,10 @@ public class GetRating implements CommandExecutor {
         }
         TableGenerator tg = new TableGenerator(TableGenerator.Alignment.LEFT, TableGenerator.Alignment.CENTER,
                 TableGenerator.Alignment.RIGHT);
-        tg.addRow("Модератор", "Рейтинг", "Причина");
+        tg.addRow("Рейтинг", "Причина");
         for (int i = user.getReasons().size() - 1; i >= 0; i--) {
             Log log = user.getReasons().get(i);
-            tg.addRow(log.getPlayer(), String.valueOf(log.getAmount()), log.getReason());
+            tg.addRow(String.valueOf(log.getAmount()), log.getReason());
         }
         ChatPaginator.ChatPage chatPage = null;
         try {

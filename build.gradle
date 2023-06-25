@@ -72,9 +72,10 @@ repositories {
 dependencies {
 
     //spigot
+    shadow (implementation 'org.xerial:sqlite-jdbc:3.42.0.0')
     implementation spigot(mcVersion)
-    shadow (implementation 'org.mongodb:mongodb-driver-sync:4.8.1')
-    shadow (implementation 'org.mongodb:bson:4.8.1')
+//    shadow (implementation 'org.mongodb:mongodb-driver-sync:4.8.1')
+//    shadow (implementation 'org.mongodb:bson:4.8.1')
 }
 
 shadowJar {

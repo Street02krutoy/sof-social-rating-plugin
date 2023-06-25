@@ -1,26 +1,25 @@
 package com.sof.plugins.core.events;
 
 import com.sof.plugins.core.Log;
-import com.sof.plugins.core.database.DatabaseManager;
+import com.sof.plugins.core.database.Database;
 import com.sof.plugins.core.database.User;
-import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.material.MaterialData;
+
+import java.sql.SQLException;
 
 public class PlayerJoin implements Listener {
-    private final DatabaseManager manager;
-
-    public PlayerJoin(DatabaseManager manager) {
-        this.manager = manager;
-    }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        User user = new User(event.getPlayer().getName(), manager);
-        //System.out.println(user.getReasons().isEmpty());
+        User user = null;
+        try {
+            user = Database.getUser(event.getPlayer().getName());
+        } catch (SQLException e) {
+            System.out.println("Player join err "+event.getPlayer().getName()+"\n "+e.getMessage());
+            return;
+        }
         if(user.getReasons().isEmpty()) return;
         Log last = user.getReasons().get(user.getReasons().size()-1);
         event.getPlayer().sendMessage(

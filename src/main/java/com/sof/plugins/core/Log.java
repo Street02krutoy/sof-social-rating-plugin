@@ -5,25 +5,17 @@ public class Log {
     private final int amount;
     private final String player;
 
-    private Log(String data) {
-        String[] parsed = data.split(";", 3);
-        this.reason = parsed[2];
-        this.player = parsed[1];
-        this.amount = Integer.parseInt(parsed[0]);
+    private Log(String reason, int amount, String player) {
+        this.reason = reason;
+        this.player = player;
+        this.amount = amount;
     }
 
-    public static Log from(String data) {
-        return new Log(data);
-    }
-
-    public static String from(String reason, int amount, String player) {
-        return amount+";"+player+";"+reason;
+    public static Log from(String reason, int amount, String player) {
+        return new Log(reason, amount, player);
     };
 
-    @Override
-    public String toString() {
-        return String.format("%d;%s", amount, reason);
-    }
+
 
     public int getAmount() {
         return amount;
@@ -35,5 +27,14 @@ public class Log {
 
     public String getPlayer() {
         return player;
+    }
+
+    @Override
+    public String toString() {
+        return "Log{" +
+                "reason='" + reason + '\'' +
+                ", amount=" + amount +
+                ", player='" + player + '\'' +
+                '}';
     }
 }

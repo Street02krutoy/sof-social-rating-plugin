@@ -1,20 +1,20 @@
 package com.sof.plugins.core.commands;
 
-import com.sof.plugins.core.database.DatabaseManager;
+import com.sof.plugins.core.database.Database;
 import com.sof.plugins.core.database.User;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.SQLException;
 import java.util.Arrays;
 
 public class AddRating implements CommandExecutor {
 
-    private final DatabaseManager manager;
 
-    public AddRating(DatabaseManager manager) {
-        this.manager = manager;
+    public AddRating() {
+
     }
 
     @Override
@@ -24,13 +24,16 @@ public class AddRating implements CommandExecutor {
     };
         try {
             int rating = Integer.parseInt(args[1]);
-            User user = new User(args[0], manager);
+            User user = Database.getUser(args[0]);
             String reason = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
-            user.addRating(rating, reason, sender.getName());
+            Database.addRating(user, rating, reason);
             sender.sendMessage("Успешно. Новый рейтинг игрока: "+user.getRating());
             return true;
         }catch (NumberFormatException e) {
             sender.sendMessage("Error isnt num");
+            return false;
+        } catch (SQLException e) {
+            System.out.println(e);
             return false;
         }
     }
