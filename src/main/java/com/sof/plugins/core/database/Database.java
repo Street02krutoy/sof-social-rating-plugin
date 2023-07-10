@@ -1,6 +1,7 @@
 package com.sof.plugins.core.database;
 
 import com.sof.plugins.core.Log;
+import com.sof.plugins.core.errors.UserNotExistException;
 
 import java.sql.*;
 import java.util.*;
@@ -22,6 +23,7 @@ public class Database {
                 "nickname VARCHAR(255) NOT NULL," +
                 "rating INT NOT NULL,"+
                 "reason VARCHAR(255),"+
+                "moderator VARCHAR(255),"+
                 "id INTEGER PRIMARY KEY AUTOINCREMENT"+
                 ")");
     }
@@ -30,22 +32,29 @@ public class Database {
 
         List<Log> logs = new ArrayList<>();
 
-        ResultSet set = conn.createStatement().executeQuery(String.format("SELECT * FROM logs WHERE nickname = '%s'", nickname));
+        ResultSet set = conn.createStatement().executeQuery(String.format("SELECT * FROM logs WHERE nickname = '%s'", nickname.toLowerCase()));
 
         if(!set.isBeforeFirst()) return logs;
         while (set.next()){
-            logs.add(Log.from(set.getString("reason"), set.getInt("rating"), set.getString("nickname")));
+            logs.add(
+                    Log.from (
+                            set.getString("reason"),
+                            set.getInt("rating"),
+                            set.getString("nickname"),
+                            set.getString("moderator")
+                    )
+            );
         }
 
         return logs;
     };
 
 
-    public static User getUser(String nickname) throws SQLException {
-        ResultSet set = conn.createStatement().executeQuery(String.format("SELECT * FROM users WHERE nickname = '%s'", nickname));
+    public static User getUser(String nickname) throws SQLException, UserNotExistException {
+        ResultSet set = conn.createStatement().executeQuery(String.format("SELECT * FROM users WHERE nickname = '%s'", nickname.toLowerCase()));
 
         if(!set.next()) {
-            return createUser(nickname);
+            throw new UserNotExistException();
         }
 
         User user = new User();
@@ -53,7 +62,7 @@ public class Database {
         user.setNickname(set.getString("nickname"));
         user.setRating (set.getInt("rating"));
         try {
-            user.setReasons(getLogs(nickname));
+            user.setReasons(getLogs(nickname.toLowerCase()));
         }catch (SQLException e){
             user.setReasons(new ArrayList<>());
         }
@@ -61,46 +70,46 @@ public class Database {
         return user;
     }
 
-    public static void addRating(String nickname, int rating, String reason) throws SQLException {
+    public static void addRating(String nickname, int rating, String reason, String moderator) throws SQLException {
 
-        PreparedStatement st = conn.prepareStatement("INSERT INTO logs(nickname,rating,reason) VALUES (?,?,?)");
+        PreparedStatement st = conn.prepareStatement("INSERT INTO logs(nickname,rating,reason,moderator) VALUES (?,?,?,?)");
 
-        st.setString(1, nickname);
+        st.setString(1, nickname.toLowerCase());
         st.setInt(2, rating);
         st.setString(3, reason);
+        st.setString(4, moderator);
 
-        User user = getUser(nickname);
+        User user = getUser(nickname.toLowerCase());
 
-        conn.createStatement().executeUpdate(String.format("UPDATE users SET rating = %d WHERE nickname = '%s'", user.getRating()+rating, nickname));
+        conn.createStatement().executeUpdate(String.format("UPDATE users SET rating = %d WHERE nickname = '%s'", user.getRating()+rating, nickname.toLowerCase()));
 
         st.executeUpdate();
 
         //conn.commit();
     }
 
-    public static void addRating(User user, int rating, String reason) throws SQLException {
+    public static void addRating(User user, int rating, String reason, String moderator) throws SQLException {
 
-        PreparedStatement st = conn.prepareStatement("INSERT INTO logs(nickname,rating,reason) VALUES (?,?,?)");
+        PreparedStatement st = conn.prepareStatement("INSERT INTO logs(nickname,rating,reason,moderator) VALUES (?,?,?,?)");
 
-        st.setString(1, user.getNickname());
+        st.setString(1, user.getNickname().toLowerCase());
         st.setInt(2, rating);
         st.setString(3, reason);
+        st.setString(4, moderator);
 
-        conn.createStatement().executeUpdate(String.format("UPDATE users SET rating = %d WHERE nickname = '%s'", user.getRating()+rating, user.getNickname()));
+        conn.createStatement().executeUpdate(String.format("UPDATE users SET rating = %d WHERE nickname = '%s'", user.getRating()+rating, user.getNickname().toLowerCase()));
 
         st.executeUpdate();
 
         user.setRating(user.getRating()+rating);
-
-        //conn.commit();
     }
 
-    private static User createUser(String nickname) throws SQLException {
+    public static User createUser(String nickname) throws SQLException {
         PreparedStatement st = conn.prepareStatement("INSERT INTO users(nickname,rating) VALUES (?,?)");
 
         User user = new User();
 
-        user.setNickname(nickname);
+        user.setNickname(nickname.toLowerCase());
         user.setRating(0);
         user.setReasons(new ArrayList<>());
 
@@ -108,7 +117,7 @@ public class Database {
         st.setInt(2, 0);
         st.executeUpdate();
 
-        addRating(user, 100, "Начальный рейтинг");
+        addRating(user, 100, "Начальный рейтинг", null);
 
         return user;
     }

@@ -4,18 +4,23 @@ public class Log {
     private final String reason;
     private final int amount;
     private final String player;
+    private final String moderator;
 
-    private Log(String reason, int amount, String player) {
+    private Log(String reason, int amount, String player, String moderator) {
         this.reason = reason;
         this.player = player;
         this.amount = amount;
+        this.moderator = moderator;
     }
 
-    public static Log from(String reason, int amount, String player) {
-        return new Log(reason, amount, player);
+    public static Log from(String reason, int amount, String player, String moderator) {
+        return new Log(reason, amount, player, moderator == null ? "Server" : moderator);
     };
 
 
+    public String getModerator() {
+        return moderator;
+    }
 
     public int getAmount() {
         return amount;
@@ -35,6 +40,7 @@ public class Log {
                 "reason='" + reason + '\'' +
                 ", amount=" + amount +
                 ", player='" + player + '\'' +
+                ", moderator='" + moderator + '\'' +
                 '}';
     }
 }

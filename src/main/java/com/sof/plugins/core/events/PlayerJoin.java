@@ -3,6 +3,7 @@ package com.sof.plugins.core.events;
 import com.sof.plugins.core.Log;
 import com.sof.plugins.core.database.Database;
 import com.sof.plugins.core.database.User;
+import com.sof.plugins.core.errors.UserNotExistException;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -13,12 +14,19 @@ public class PlayerJoin implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        User user = null;
+        User user;
         try {
             user = Database.getUser(event.getPlayer().getName());
         } catch (SQLException e) {
             System.out.println("Player join err "+event.getPlayer().getName()+"\n "+e.getMessage());
             return;
+        }catch (UserNotExistException e) {
+            try {
+                user = Database.createUser(event.getPlayer().getName());
+            } catch (SQLException ex) {
+                System.out.println("Player join err "+event.getPlayer().getName()+"\n "+e.getMessage());
+                return;
+            }
         }
         if(user.getReasons().isEmpty()) return;
         Log last = user.getReasons().get(user.getReasons().size()-1);
@@ -29,7 +37,7 @@ public class PlayerJoin implements Listener {
                         user.getRating(),
                         last.getAmount(),
                         last.getReason(),
-                        last.getPlayer()
+                        last.getModerator()
                 )
         );
     }

@@ -4,6 +4,7 @@ import com.sof.plugins.core.Log;
 import com.sof.plugins.core.TableGenerator;
 import com.sof.plugins.core.database.Database;
 import com.sof.plugins.core.database.User;
+import com.sof.plugins.core.errors.UserNotExistException;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.command.Command;
@@ -32,6 +33,9 @@ public class GetRating implements CommandExecutor {
         } catch (SQLException e) {
             System.out.println(e);
             return false;
+        } catch (UserNotExistException e) {
+            sender.sendMessage("Такого игрока не существует.");
+            return true;
         }
         sender.sendMessage("Текущий рейтинг игрока: " + user.getRating() + "\n");
         if(user.getReasons().isEmpty()) {
@@ -40,10 +44,10 @@ public class GetRating implements CommandExecutor {
         }
         TableGenerator tg = new TableGenerator(TableGenerator.Alignment.LEFT, TableGenerator.Alignment.CENTER,
                 TableGenerator.Alignment.RIGHT);
-        tg.addRow("Рейтинг", "Причина");
+        tg.addRow("Рейтинг", "Причина", "Модератор");
         for (int i = user.getReasons().size() - 1; i >= 0; i--) {
             Log log = user.getReasons().get(i);
-            tg.addRow(String.valueOf(log.getAmount()), log.getReason());
+            tg.addRow(String.valueOf(log.getAmount()), log.getReason(), log.getModerator());
         }
         ChatPaginator.ChatPage chatPage = null;
         try {
